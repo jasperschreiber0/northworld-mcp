@@ -176,7 +176,29 @@ app.get('/admin/stats', (req, res) => {
   const summary = getDailySummary();
   res.json(summary);
 });
+app.post('/mcp', (req, res) => {
+  const { method } = req.body;
+  
+  if (method === 'tools/list') {
+    return res.json({
+      jsonrpc: '2.0',
+      id: req.body.id,
+      result: {
+        tools: Object.values(tools).map(t => t.descriptor)
+      }
+    });
+  }
 
+  if (method === 'tools/call') {
+    // forward to existing /mcp/call logic
+    const { name, arguments: params } = req.body.params;
+    req.body.tool = name;
+    req.body.params = params;
+    return app._router.handle({ ...req, url: '/mcp/call', method: 'POST' }, res, () => {});
+  }
+
+  res.status(404).json({ error: 'method_not_found' });
+});
 // ─────────────────────────────────────────────
 // 404 handler
 // ─────────────────────────────────────────────
